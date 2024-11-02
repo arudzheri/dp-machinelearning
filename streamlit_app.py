@@ -1,7 +1,7 @@
 import streamlit as st
 
 # App Title
-st.title("User Profile App")
+st.title("My Chemical Molecules App")
 
 # Collecting User Input
 name = st.text_input("Enter your name:", "")
