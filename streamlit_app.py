@@ -1,126 +1,70 @@
 import streamlit as st
-import numpy as np
-import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
+from chembl_webresource_client.new_client import new_client as ch
+from streamlit_ketcher import st_ketcher
 
-st.title('🧪My Chemical Molecules App')
+# Utility functions
+def name_to_molecule(name: str):
+    """Fetches the molfile and ChEMBL ID for a given molecule name."""
+    columns = ['molecule_chembl_id', 'molecule_structures']
+    result = ch.molecule.filter(molecule_synonyms__molecule_synonym__iexact=name).only(columns)
+    if result:
+        best_match = result[0]
+        return best_match["molecule_structures"]["molfile"], best_match["molecule_chembl_id"]
+    return None, None
 
-# App Info
-st.info("Chemical Molecule Viewer")
+def find_similar_molecules(smiles: str, threshold: int):
+    """Fetches molecules similar to the given SMILES string."""
+    columns = ['molecule_chembl_id', 'similarity', 'pref_name', 'molecule_structures']
+    try:
+        return ch.similarity.filter(smiles=smiles, similarity=threshold).only(columns)
+    except Exception as e:
+        st.error(f"Error in similarity search: {e}")
+        return None
 
-with st.expander('Data'):
-  st.write('**Raw data**')
-  df = pd.read_csv('https://raw.githubusercontent.com/dataprofessor/data/master/penguins_cleaned.csv')
-  df
+# Streamlit app layout
+st.title("Chemical Molecule Similarity Search")
 
-  st.write('**X**')
-  X_raw = df.drop('species', axis=1)
-  X_raw
-
-  st.write('**y**')
-  y_raw = df.species
-  y_raw
-
-with st.expander('Input features'):
-  st.write('**Input penguin**')
-  input_df
-  st.write('**Combined penguins data**')
-  input_penguins
-
-
-# Data preparation
-# Encode X
-encode = ['island', 'sex']
-df_penguins = pd.get_dummies(input_penguins, prefix=encode)
-
-X = df_penguins[1:]
-input_row = df_penguins[:1]
-
-# Encode y
-target_mapper = {'Adelie': 0,
-                 'Chinstrap': 1,
-                 'Gentoo': 2}
-def target_encode(val):
-  return target_mapper[val]
-
-y = y_raw.apply(target_encode)
-
-with st.expander('Data preparation'):
-  st.write('**Encoded X (input penguin)**')
-  input_row
-  st.write('**Encoded y**')
-  y
-
-
-# Model training and inference
-## Train the ML model
-clf = RandomForestClassifier()
-clf.fit(X, y)
-
-## Apply model to make predictions
-prediction = clf.predict(input_row)
-prediction_proba = clf.predict_proba(input_row)
-
-df_prediction_proba = pd.DataFrame(prediction_proba)
-df_prediction_proba.columns = ['Adelie', 'Chinstrap', 'Gentoo']
-df_prediction_proba.rename(columns={0: 'Adelie',
-                                 1: 'Chinstrap',
-                                 2: 'Gentoo'})
-
-# Display predicted species
-st.subheader('Predicted Species')
-st.dataframe(df_prediction_proba,
-             column_config={
-               'Adelie': st.column_config.ProgressColumn(
-                 'Adelie',
-                 format='%f',
-                 width='medium',
-                 min_value=0,
-                 max_value=1
-               ),
-               'Chinstrap': st.column_config.ProgressColumn(
-                 'Chinstrap',
-                 format='%f',
-                 width='medium',
-                 min_value=0,
-                 max_value=1
-               ),
-               'Gentoo': st.column_config.ProgressColumn(
-                 'Gentoo',
-                 format='%f',
-                 width='medium',
-                 min_value=0,
-                 max_value=1
-               ),
-             }, hide_index=True)
-
-
-penguins_species = np.array(['Adelie', 'Chinstrap', 'Gentoo'])
-st.success(str(penguins_species[prediction][0]))
-
-# Sample molecules and their SMILES
-sample_molecules = {
-    "Ethanol": "CCO",
-    "Aspirin": "CC(=O)OC1=CC=CC=C1C(=O)O",
-    "Caffeine": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",
-    "Glucose": "C(C1C(C(C(C(O1)O)O)O)O)O",
-    "Nicotine": "CN1CCCC1C2=CN=CC=C2"
-}
-
-# Display sample molecules with names
-st.subheader("Sample Molecules")
-for name, smiles in sample_molecules.items():
-    mol = Chem.MolFromSmiles(smiles)
-    st.image(Draw.MolToImage(mol), caption=name)
-
-# Custom SMILES Input
-st.subheader("View a Custom Molecule")
-custom_smiles = st.text_input("Enter a SMILES notation:")
-
-if custom_smiles:
-    custom_mol = Chem.MolFromSmiles(custom_smiles)
-    if custom_mol:
-        st.image(Draw.MolToImage(custom_mol), caption="Custom Molecule")
+# Input options
+with st.sidebar:
+    st.subheader("Molecule Input")
+    option = st.radio("Choose input type", ("Draw Molecule", "Search by Name"))
+    
+    if option == "Search by Name":
+        molecule_name = st.text_input("Enter molecule name:")
+        if st.button("Fetch Molecule"):
+            molfile, chembl_id = name_to_molecule(molecule_name)
+            if molfile:
+                smiles = st_ketcher(molfile=molfile)
+                st.write(f"ChEMBL ID: {chembl_id}")
+            else:
+                st.warning("Molecule not found.")
     else:
-        st.error("Invalid SMILES notation. Please enter a valid SMILES string.")
+        smiles = st_ketcher()
 
+# Similarity search settings
+similarity = st.slider("Similarity threshold:", min_value=60, max_value=100, value=80)
+
+# Similarity search results
+if smiles:
+    with st.expander("Raw SMILES Data"):
+        st.markdown(f"```{smiles}```")
+    
+    similar_molecules = find_similar_molecules(smiles, similarity)
+    
+    if not similar_molecules:
+        st.warning("No similar molecules found.")
+    else:
+        st.subheader("Similar Molecules")
+        for mol in similar_molecules:
+            chembl_id = mol.get('molecule_chembl_id')
+            similarity_score = mol.get('similarity')
+            pref_name = mol.get('pref_name') or "None"
+            molfile = mol['molecule_structures'].get('molfile')
+            
+            st.write(f"**ChEMBL ID:** [{chembl_id}](https://www.ebi.ac.uk/chembl/compound_report_card/{chembl_id})")
+            st.write(f"**Preferred Name:** {pref_name}")
+            st.write(f"**Similarity:** {similarity_score}%")
+            
+            if molfile:
+                st.image(st_ketcher(molfile=molfile))
+            st.markdown("---")
