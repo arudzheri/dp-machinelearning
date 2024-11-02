@@ -1,13 +1,30 @@
+# Install the required libraries (uncomment these if needed)
+# !pip install streamlit rdkit-pypi
+
 import streamlit as st
-from PIL import Image
+from rdkit import Chem
+from rdkit.Chem import Draw
 
 st.title('🤖 Machine Learning- Chemical Molecule App')
 
 st.info('This is app that builds a machine learning model for chemical molecules!')
 
-# Load and display the image
-image_path = "/mnt/data/Screenshot 2024-11-02 142900.png"
-image = Image.open(image_path)
+def main():
+    st.title("Molecule Viewer")
 
-st.title("Chemical Structure Image")
-st.image(image, caption="Chemical Structure", use_column_width=True)
+    # Input the SMILES string here (example placeholder)
+    smiles = "COc1ccccc1C(=O)Nc2ccc(cc2)C(=O)c3ccccc3O"  # Replace with actual SMILES of your molecule
+    
+    # Generate the molecule from the SMILES string
+    molecule = Chem.MolFromSmiles(smiles)
+    
+    # Draw the molecule
+    if molecule:
+        st.write("### Molecular Structure")
+        image = Draw.MolToImage(molecule)
+        st.image(image)
+    else:
+        st.write("Invalid SMILES string. Please enter a valid one.")
+
+if __name__ == "__main__":
+    main()
