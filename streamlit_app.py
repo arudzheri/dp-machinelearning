@@ -1,47 +1,57 @@
-import onnxruntime
-import numpy as np
+import streamlit as st
 from rdkit import Chem
-from rdkit.Chem import rdMolDescriptors
+from rdkit.Chem import Draw
+from rdkit.Chem import Descriptors
+from PIL import Image
+import io
 
-FP_SIZE = 1024
-RADIUS = 2
+# Title and description
+st.title("Chemical Molecule Explorer")
+st.write("Enter a SMILES string to visualize a molecule and see some basic properties.")
 
-# load the model
-ort_session = onnxruntime.InferenceSession("chembl_32_multitask.onnx")
+# Sidebar for input
+st.sidebar.header("Molecule Input")
+smiles = st.sidebar.text_input("Enter SMILES notation:", "CCO")  # Example SMILES for ethanol
 
-
-def calc_morgan_fp(smiles):
+# Function to draw molecule
+def draw_molecule(smiles):
     mol = Chem.MolFromSmiles(smiles)
-    fp = rdMolDescriptors.GetMorganFingerprintAsBitVect(
-        mol, RADIUS, nBits=FP_SIZE)
-    a = np.zeros((0,), dtype=np.float32)
-    Chem.DataStructs.ConvertToNumpyArray(fp, a)
-    return a
+    if mol:
+        img = Draw.MolToImage(mol, size=(300, 300))
+        return img
+    else:
+        return None
 
+# Function to get molecular properties
+def get_molecule_properties(smiles):
+    mol = Chem.MolFromSmiles(smiles)
+    if mol:
+        properties = {
+            "Molecular Weight": Descriptors.MolWt(mol),
+            "LogP (octanol/water partition coefficient)": Descriptors.MolLogP(mol),
+            "Number of Rotatable Bonds": Descriptors.NumRotatableBonds(mol),
+            "Number of Hydrogen Bond Donors": Descriptors.NumHDonors(mol),
+            "Number of Hydrogen Bond Acceptors": Descriptors.NumHAcceptors(mol),
+        }
+        return properties
+    else:
+        return None
 
-def format_preds(preds, targets):
-    preds = np.concatenate(preds).ravel()
-    np_preds = [(tar, pre) for tar, pre in zip(targets, preds)]
-    dt = [('chembl_id', '|U20'), ('pred', '<f4')]
-    np_preds = np.array(np_preds, dtype=dt)
-    np_preds[::-1].sort(order='pred')
-    return np_preds
+# Draw the molecule and show properties
+if smiles:
+    # Display molecule structure
+    st.subheader("Molecule Structure")
+    molecule_image = draw_molecule(smiles)
+    if molecule_image:
+        st.image(molecule_image, caption="Molecule Structure", use_column_width=True)
+    else:
+        st.error("Invalid SMILES string. Please enter a valid notation.")
 
-
-def predict(smiles):
-    # calculate the FPs
-    descs = calc_morgan_fp(smiles)
-
-    # run the prediction
-    ort_inputs = {ort_session.get_inputs()[0].name: descs}
-    preds = ort_session.run(None, ort_inputs)
-
-    # example of how the output of the model can be formatted
-    return format_preds(preds, [o.name for o in ort_session.get_outputs()])
-
-
-def predict_all(smiles):
-    preds = []
-    for smile in smiles:
-        preds.append(predict(smile))
-    return np.concatenate(preds)
+    # Display molecular properties
+    st.subheader("Molecular Properties")
+    properties = get_molecule_properties(smiles)
+    if properties:
+        for prop, value in properties.items():
+            st.write(f"**{prop}:** {value}")
+    else:
+        st.error("Could not compute properties. Check the SMILES input.")
