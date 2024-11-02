@@ -5,8 +5,8 @@ from sklearn.ensemble import RandomForestClassifier
 
 st.title('🧪My Chemical Molecules App')
 
-# App Title
-st.title("Chemical Molecule Viewer")
+# App Info
+st.info("Chemical Molecule Viewer")
 
 with st.expander('Data'):
   st.write('**Raw data**')
