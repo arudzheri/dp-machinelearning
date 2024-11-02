@@ -1,3 +1,5 @@
+chembl_webresource_client
+streamlit_ketcher
 streamlit
 numpy
 pandas
