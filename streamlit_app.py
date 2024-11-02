@@ -1,34 +1,47 @@
-import streamlit as st
-from streamlit_ketcher import st_ketcher
+import onnxruntime
+import numpy as np
+from rdkit import Chem
+from rdkit.Chem import rdMolDescriptors
 
-smiles = st_ketcher()
+FP_SIZE = 1024
+RADIUS = 2
 
-st.title('🤖 Machine Learning - Chemical Molecule App')
+# load the model
+ort_session = onnxruntime.InferenceSession("chembl_32_multitask.onnx")
 
-st.info('This is an app that builds a machine learning model for chemical molecules!')
 
-molecule = st.text_input("Molecule", DEFAULT_MOL)
-smile_code = st_ketcher(molecule)
-st.markdown(f"Smile code: ``{smile_code}``")
+def calc_morgan_fp(smiles):
+    mol = Chem.MolFromSmiles(smiles)
+    fp = rdMolDescriptors.GetMorganFingerprintAsBitVect(
+        mol, RADIUS, nBits=FP_SIZE)
+    a = np.zeros((0,), dtype=np.float32)
+    Chem.DataStructs.ConvertToNumpyArray(fp, a)
+    return a
 
-with editor_column:
-    smiles = st_ketcher(st.session_state.molfile)
-    similarity = st.slider("Similarity threshold:", min_value=60, max_value=100)
-    with st.expander("Raw data"):
-        st.markdown(f"```{smiles}```")
-    with results_column:
-        similar_molecules = utils.find_similar_molecules(smiles, similarity)
-        if not similar_molecules:
-            st.warning("No results found")
-        else:
-            table = utils.render_similarity_table(similar_molecules)
-            similar_smiles = utils.get_similar_smiles(similar_molecules)
-            st.markdown(f'<div style="overflow:scroll; height:600px; padding-left: 80px;">{table}</div>',
-                        unsafe_allow_html=True)
 
-def find_similar_molecules(smiles: str, threshold: int):
-    columns = ['molecule_chembl_id', 'similarity', 'pref_name', 'molecule_structures']
-    try:
-        return ch.similarity.filter(smiles=smiles, similarity=threshold).only(columns)
-    except Exception as _:
-        return None
+def format_preds(preds, targets):
+    preds = np.concatenate(preds).ravel()
+    np_preds = [(tar, pre) for tar, pre in zip(targets, preds)]
+    dt = [('chembl_id', '|U20'), ('pred', '<f4')]
+    np_preds = np.array(np_preds, dtype=dt)
+    np_preds[::-1].sort(order='pred')
+    return np_preds
+
+
+def predict(smiles):
+    # calculate the FPs
+    descs = calc_morgan_fp(smiles)
+
+    # run the prediction
+    ort_inputs = {ort_session.get_inputs()[0].name: descs}
+    preds = ort_session.run(None, ort_inputs)
+
+    # example of how the output of the model can be formatted
+    return format_preds(preds, [o.name for o in ort_session.get_outputs()])
+
+
+def predict_all(smiles):
+    preds = []
+    for smile in smiles:
+        preds.append(predict(smile))
+    return np.concatenate(preds)
