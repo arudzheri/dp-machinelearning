@@ -2,8 +2,6 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
-from rdkit import Chem
-from rdkit.Chem import Draw
 
 st.title('🧪My Chemical Molecules App')
 
