@@ -51,7 +51,7 @@ if smiles:
     
     similar_molecules = find_similar_molecules(smiles, similarity)
     
-    if not similar_molecules:
+    if similar_molecules is None:
         st.warning("No similar molecules found.")
     else:
         st.subheader("Similar Molecules")
@@ -61,10 +61,11 @@ if smiles:
             pref_name = mol.get('pref_name') or "None"
             molfile = mol['molecule_structures'].get('molfile')
             
-            st.write(f"**ChEMBL ID:** [{chembl_id}]("https://www.ebi.ac.uk/chembl/web_components/search_results/c1ccccc1N{chembl_id})")
+            st.write(f"**ChEMBL ID:** [{chembl_id}](https://www.ebi.ac.uk/chembl/compound_report_card/{chembl_id})")
             st.write(f"**Preferred Name:** {pref_name}")
             st.write(f"**Similarity:** {similarity_score}%")
             
             if molfile:
                 st.image(st_ketcher(molfile=molfile))
             st.markdown("---")
+
