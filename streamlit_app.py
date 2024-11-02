@@ -5,7 +5,8 @@ from sklearn.ensemble import RandomForestClassifier
 
 st.title('🧪My Chemical Molecules App')
 
-st.info('This is app builds a machine learning model!')
+# App Title
+st.title("Chemical Molecule Viewer")
 
 with st.expander('Data'):
   st.write('**Raw data**')
@@ -96,3 +97,30 @@ st.dataframe(df_prediction_proba,
 
 penguins_species = np.array(['Adelie', 'Chinstrap', 'Gentoo'])
 st.success(str(penguins_species[prediction][0]))
+
+# Sample molecules and their SMILES
+sample_molecules = {
+    "Ethanol": "CCO",
+    "Aspirin": "CC(=O)OC1=CC=CC=C1C(=O)O",
+    "Caffeine": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",
+    "Glucose": "C(C1C(C(C(C(O1)O)O)O)O)O",
+    "Nicotine": "CN1CCCC1C2=CN=CC=C2"
+}
+
+# Display sample molecules with names
+st.subheader("Sample Molecules")
+for name, smiles in sample_molecules.items():
+    mol = Chem.MolFromSmiles(smiles)
+    st.image(Draw.MolToImage(mol), caption=name)
+
+# Custom SMILES Input
+st.subheader("View a Custom Molecule")
+custom_smiles = st.text_input("Enter a SMILES notation:")
+
+if custom_smiles:
+    custom_mol = Chem.MolFromSmiles(custom_smiles)
+    if custom_mol:
+        st.image(Draw.MolToImage(custom_mol), caption="Custom Molecule")
+    else:
+        st.error("Invalid SMILES notation. Please enter a valid SMILES string.")
+
