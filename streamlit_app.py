@@ -22,7 +22,7 @@ def find_similar_molecules(smiles: str, threshold: int):
         return None
 
 # Streamlit app layout
-st.title("Chemical Molecule Similarity Search")
+st.title(🧪"Chemical Molecule Similarity Search")
 
 # Input options
 with st.sidebar:
