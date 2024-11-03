@@ -10,6 +10,16 @@ with st.expander("ℹ️ About this App"):
         - **Similarity Threshold**: Adjust the threshold to control how close the results are to your input.
     """)
 
+# Debugging test for st_ketcher
+if st.secrets.get("DEBUG_MODE", False):  # Toggle DEBUG_MODE in Streamlit secrets
+    sample_molfile = "your_sample_molfile_data_here"  # Replace with valid sample data
+    try:
+        result = st_ketcher(molfile=sample_molfile)
+        print(result)  # This should print in the terminal
+        st.write(result)  # Display in the Streamlit app for testing
+    except Exception as e:
+        st.error(f"st_ketcher test error: {e}")
+
 # Utility functions
 def name_to_molecule(name: str):
     """Fetches the molfile and ChEMBL ID for a given molecule name."""
@@ -43,7 +53,10 @@ def display_similar_molecule(molecule):
     st.write(f"**Molecular Weight:** {molecule.get('molecular_weight', 'None')}")
 
     if molfile:
-        st.image(st_ketcher(molfile=molfile))
+        print(type(molfile))  # Add this line to check the type
+        st.image(st_ketcher(molfile=molfile)) # Original function call
+        except TypeError as e:
+    st.error(f"Error with st_ketcher function: {e}")
     st.markdown("---")
 
 # Streamlit app layout
