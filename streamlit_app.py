@@ -71,10 +71,6 @@ with st.sidebar:
                         st.write(f"**ChEMBL ID:** {chembl_id}")
                     else:
                         st.warning("Molecule not found. Please check the name and try again.")
-                     except TypeError as e:
-                    st.error(f"An error occurred while fetching the molecule: {e}")
-                     except Exception as e:
-                    st.error(f"An unexpected error occurred: {e}")
             else:
                 st.warning("Please enter a valid molecule name.")
     else:
