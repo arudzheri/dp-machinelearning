@@ -63,7 +63,6 @@ with st.sidebar:
             # Validate molecule_name is not empty or whitespace
             if molecule_name.strip():
                 with st.spinner("Searching for molecule..."):
-                    try:
                     # Attempt to fetch the molecule data    
                     molfile, chembl_id = name_to_molecule(molecule_name)
                     # Check if molfile is valid
