@@ -47,7 +47,7 @@ def display_similar_molecule(molecule):
     molfile = molecule['molecule_structures'].get('molfile')
 
     st.markdown(f"### Molecule: {pref_name} (Similarity: {similarity_score}%)")
-    st.write(f"**ChEMBL ID:** [{chembl_id}](https://www.ebi.ac.uk/chembl/compound_report_card/{chembl_id})")
+    st.write(f"**ChEMBL ID:** [{chembl_id}](https://www.ebi.ac.uk/chembl/web_components/explore/compound/CHEMBL280998{chembl_id})")
     st.write(f"**Preferred Name:** {pref_name}")
     st.write(f"**Similarity:** {similarity_score}%")
     st.write(f"**Molecular Weight:** {molecule.get('molecular_weight', 'None')}")
