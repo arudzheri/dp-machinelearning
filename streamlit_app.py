@@ -57,20 +57,34 @@ with st.sidebar:
     smiles = None  # Ensure smiles is defined
 
     if option == "Search by Name":
-        molecule_name = st.text_input("Enter molecule name:")
-        if st.button("Fetch Molecule"):
-            if molecule_name.strip():
-                with st.spinner("Searching for molecule..."):
+    molecule_name = st.text_input("Enter molecule name:")
+    
+    # Check if the Fetch Molecule button is clicked
+    if st.button("Fetch Molecule"):
+        # Validate molecule_name is not empty or whitespace
+        if molecule_name.strip():
+            with st.spinner("Searching for molecule..."):
+                try:
+                    # Attempt to fetch the molecule data
                     molfile, chembl_id = name_to_molecule(molecule_name)
+                    
+                    # Check if molfile is valid
                     if molfile:
                         smiles = st_ketcher(molfile=molfile)
                         st.write(f"**ChEMBL ID:** {chembl_id}")
                     else:
                         st.warning("Molecule not found. Please check the name and try again.")
-            else:
-                st.warning("Please enter a valid molecule name.")
-    else:
-        smiles = st_ketcher()
+                
+                except TypeError as e:
+                    st.error(f"An error occurred while fetching the molecule: {e}")
+                except Exception as e:
+                    st.error(f"An unexpected error occurred: {e}")
+        
+        else:
+            st.warning("Please enter a valid molecule name.")
+else:
+    # Handle the case where the user is not searching by name
+    smiles = st_ketcher()
 
 # Similarity Search Settings
 st.subheader("🔍 Similarity Search Settings")
