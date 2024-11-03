@@ -55,9 +55,6 @@ with st.sidebar:
     option = st.radio("Choose input type", ("Draw Molecule", "Search by Name"))
 
     smiles = None  # Ensure smiles is defined
-
-    if option == "Search by Name":
-    molecule_name = st.text_input("Enter molecule name:")
     
     if option == "Search by Name":
         molecule_name = st.text_input("Enter molecule name:")
