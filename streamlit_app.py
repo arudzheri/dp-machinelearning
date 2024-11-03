@@ -53,10 +53,10 @@ def display_similar_molecule(molecule):
     st.write(f"**Molecular Weight:** {molecule.get('molecular_weight', 'None')}")
 
     if molfile:
-        print(type(molfile))  # Add this line to check the type
-        st.image(st_ketcher(molfile=molfile)) # Original function call
+        try:
+            st.image(st_ketcher(molfile=molfile))  # Display the molecule structure
         except TypeError as e:
-    st.error(f"Error with st_ketcher function: {e}")
+            st.error(f"Error with st_ketcher function: {e}")
     st.markdown("---")
 
 # Streamlit app layout
